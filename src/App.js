@@ -104,13 +104,28 @@ function App() {
   useEffect(() => {
     return () => {
       if (gstc) {
-        gstc.app.destroy();
+        gstc.destroy();
       }
     };
   });
 
+  function updateFirstRow() {
+    state.update(`config.list.rows.${GSTC.api.GSTCID('0')}`, (row) => {
+      row.label = 'Changed dynamically';
+      return row;
+    });
+  }
+
+  function changeZoomLevel() {
+    state.update('config.chart.time.zoom', 21);
+  }
+
   return (
     <div className="App">
+      <div className="toolbox">
+        <button onClick={updateFirstRow}>Update first row</button>
+        <button onClick={changeZoomLevel}>Change zoom level</button>
+      </div>
       <div className="gstc-wrapper" ref={callback}></div>
     </div>
   );
