@@ -6,7 +6,7 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
     "@testing-library/user-event": "^14.6.1",
-    "gantt-schedule-timeline-calendar": "^3.40.3",
+    "gantt-schedule-timeline-calendar": "^3.40.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-scripts": "5.0.1"
