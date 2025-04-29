@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import GSTC from "gantt-schedule-timeline-calendar/dist/gstc.wasm.esm.min.js";
 import { Plugin as TimelinePointer } from "gantt-schedule-timeline-calendar/dist/plugins/timeline-pointer.esm.min.js";
@@ -9,105 +9,115 @@ import { Plugin as ItemMovement } from "gantt-schedule-timeline-calendar/dist/pl
 import "gantt-schedule-timeline-calendar/dist/style.css";
 import "./App.css";
 
-let gstc, state;
-
-// helper functions
-
-function generateRows() {
-  /**
-   * @type { import("gantt-schedule-timeline-calendar").Rows }
-   */
-  const rows = {};
-  for (let i = 0; i < 100; i++) {
-    const id = GSTC.api.GSTCID(i.toString());
-    rows[id] = {
-      id,
-      label: `Row ${i}`,
-    };
-  }
-  return rows;
-}
-
-function generateItems() {
-  /**
-   * @type { import("gantt-schedule-timeline-calendar").Items }
-   */
-  const items = {};
-  // @ts-ignore
-  let start = GSTC.api.date().startOf("day").subtract(6, "day");
-  for (let i = 0; i < 100; i++) {
-    const id = GSTC.api.GSTCID(i.toString());
-    const rowId = GSTC.api.GSTCID(Math.floor(Math.random() * 100).toString());
-    start = start.add(1, "day");
-    items[id] = {
-      id,
-      label: `Item ${i}`,
-      rowId,
-      time: {
-        start: start.valueOf(),
-        end: start.add(1, "day").endOf("day").valueOf(),
-      },
-    };
-  }
-  return items;
-}
-
-function initializeGSTC(element) {
-  /**
-   * @type { import("gantt-schedule-timeline-calendar").Config }
-   */
-  const config = {
-    licenseKey:
-      "====BEGIN LICENSE KEY====\nXOfH/lnVASM6et4Co473t9jPIvhmQ/l0X3Ewog30VudX6GVkOB0n3oDx42NtADJ8HjYrhfXKSNu5EMRb5KzCLvMt/pu7xugjbvpyI1glE7Ha6E5VZwRpb4AC8T1KBF67FKAgaI7YFeOtPFROSCKrW5la38jbE5fo+q2N6wAfEti8la2ie6/7U2V+SdJPqkm/mLY/JBHdvDHoUduwe4zgqBUYLTNUgX6aKdlhpZPuHfj2SMeB/tcTJfH48rN1mgGkNkAT9ovROwI7ReLrdlHrHmJ1UwZZnAfxAC3ftIjgTEHsd/f+JrjW6t+kL6Ef1tT1eQ2DPFLJlhluTD91AsZMUg==||U2FsdGVkX1/SWWqU9YmxtM0T6Nm5mClKwqTaoF9wgZd9rNw2xs4hnY8Ilv8DZtFyNt92xym3eB6WA605N5llLm0D68EQtU9ci1rTEDopZ1ODzcqtTVSoFEloNPFSfW6LTIC9+2LSVBeeHXoLEQiLYHWihHu10Xll3KsH9iBObDACDm1PT7IV4uWvNpNeuKJc\npY3C5SG+3sHRX1aeMnHlKLhaIsOdw2IexjvMqocVpfRpX4wnsabNA0VJ3k95zUPS3vTtSegeDhwbl6j+/FZcGk9i+gAy6LuetlKuARjPYn2LH5Be3Ah+ggSBPlxf3JW9rtWNdUoFByHTcFlhzlU9HnpnBUrgcVMhCQ7SAjN9h2NMGmCr10Rn4OE0WtelNqYVig7KmENaPvFT+k2I0cYZ4KWwxxsQNKbjEAxJxrzK4HkaczCvyQbzj4Ppxx/0q+Cns44OeyWcwYD/vSaJm4Kptwpr+L4y5BoSO/WeqhSUQQ85nvOhtE0pSH/ZXYo3pqjPdQRfNm6NFeBl2lwTmZUEuw==\n====END LICENSE KEY====",
-    plugins: [TimelinePointer(), Selection(), ItemResizing(), ItemMovement()],
-    list: {
-      columns: {
-        data: {
-          [GSTC.api.GSTCID("id")]: {
-            id: GSTC.api.GSTCID("id"),
-            width: 60,
-            data: ({ row }) => GSTC.api.sourceID(row.id),
-            header: {
-              content: "ID",
-            },
-          },
-          [GSTC.api.GSTCID("label")]: {
-            id: GSTC.api.GSTCID("label"),
-            width: 200,
-            data: "label",
-            header: {
-              content: "Label",
-            },
-          },
-        },
-      },
-      rows: generateRows(),
-    },
-    chart: {
-      items: generateItems(),
-    },
-  };
-
-  state = GSTC.api.stateFromConfig(config);
-
-  gstc = GSTC({
-    element,
-    state,
-  });
-}
-
 function App() {
-  const callback = useCallback((element) => {
-    if (element) initializeGSTC(element);
+  const gstcEl = useRef(null);
+
+  const [gstc, setGstc] = useState(null);
+  const [state, setState] = useState(null);
+  const [count, setCount] = useState(0);
+
+  // helper functions
+
+  const generateRows = useCallback(() => {
+    /**
+     * @type { import("gantt-schedule-timeline-calendar").Rows }
+     */
+    const rows = {};
+    for (let i = 0; i < 100; i++) {
+      const id = GSTC.api.GSTCID(i.toString());
+      rows[id] = {
+        id,
+        label: `Row ${i}`,
+      };
+    }
+    return rows;
   }, []);
 
+  const generateItems = useCallback(() => {
+    /**
+     * @type { import("gantt-schedule-timeline-calendar").Items }
+     */
+    const items = {};
+    // @ts-ignore
+    let start = GSTC.api.date().startOf("day").subtract(6, "day");
+    for (let i = 0; i < 100; i++) {
+      const id = GSTC.api.GSTCID(i.toString());
+      const rowId = GSTC.api.GSTCID(Math.floor(Math.random() * 100).toString());
+      start = start.add(1, "day");
+      items[id] = {
+        id,
+        label: `Item ${i}`,
+        rowId,
+        time: {
+          start: start.valueOf(),
+          end: start.add(1, "day").endOf("day").valueOf(),
+        },
+      };
+    }
+    return items;
+  }, []);
+
+  const initializeGSTC = useCallback(
+    (element) => {
+      if (gstc) {
+        return;
+      }
+      /**
+       * @type { import("gantt-schedule-timeline-calendar").Config }
+       */
+      const config = {
+        licenseKey:
+          "====BEGIN LICENSE KEY====\nXOfH/lnVASM6et4Co473t9jPIvhmQ/l0X3Ewog30VudX6GVkOB0n3oDx42NtADJ8HjYrhfXKSNu5EMRb5KzCLvMt/pu7xugjbvpyI1glE7Ha6E5VZwRpb4AC8T1KBF67FKAgaI7YFeOtPFROSCKrW5la38jbE5fo+q2N6wAfEti8la2ie6/7U2V+SdJPqkm/mLY/JBHdvDHoUduwe4zgqBUYLTNUgX6aKdlhpZPuHfj2SMeB/tcTJfH48rN1mgGkNkAT9ovROwI7ReLrdlHrHmJ1UwZZnAfxAC3ftIjgTEHsd/f+JrjW6t+kL6Ef1tT1eQ2DPFLJlhluTD91AsZMUg==||U2FsdGVkX1/SWWqU9YmxtM0T6Nm5mClKwqTaoF9wgZd9rNw2xs4hnY8Ilv8DZtFyNt92xym3eB6WA605N5llLm0D68EQtU9ci1rTEDopZ1ODzcqtTVSoFEloNPFSfW6LTIC9+2LSVBeeHXoLEQiLYHWihHu10Xll3KsH9iBObDACDm1PT7IV4uWvNpNeuKJc\npY3C5SG+3sHRX1aeMnHlKLhaIsOdw2IexjvMqocVpfRpX4wnsabNA0VJ3k95zUPS3vTtSegeDhwbl6j+/FZcGk9i+gAy6LuetlKuARjPYn2LH5Be3Ah+ggSBPlxf3JW9rtWNdUoFByHTcFlhzlU9HnpnBUrgcVMhCQ7SAjN9h2NMGmCr10Rn4OE0WtelNqYVig7KmENaPvFT+k2I0cYZ4KWwxxsQNKbjEAxJxrzK4HkaczCvyQbzj4Ppxx/0q+Cns44OeyWcwYD/vSaJm4Kptwpr+L4y5BoSO/WeqhSUQQ85nvOhtE0pSH/ZXYo3pqjPdQRfNm6NFeBl2lwTmZUEuw==\n====END LICENSE KEY====",
+        plugins: [TimelinePointer(), Selection(), ItemResizing(), ItemMovement()],
+        list: {
+          columns: {
+            data: {
+              [GSTC.api.GSTCID("id")]: {
+                id: GSTC.api.GSTCID("id"),
+                width: 60,
+                data: ({ row }) => GSTC.api.sourceID(row.id),
+                header: {
+                  content: "ID",
+                },
+              },
+              [GSTC.api.GSTCID("label")]: {
+                id: GSTC.api.GSTCID("label"),
+                width: 200,
+                data: "label",
+                header: {
+                  content: "Label",
+                },
+              },
+            },
+          },
+          rows: generateRows(),
+        },
+        chart: {
+          items: generateItems(),
+        },
+      };
+
+      const _state = GSTC.api.stateFromConfig(config);
+      const _gstc = GSTC({
+        element,
+        state: _state,
+      });
+      setState(_state);
+      setGstc(_gstc);
+    },
+    [generateItems, generateRows, gstc]
+  );
+
   useEffect(() => {
+    if (gstcEl.current && !gstc) {
+      initializeGSTC(gstcEl.current);
+    }
     return () => {
       if (gstc) {
         gstc.destroy();
       }
     };
-  });
+  }, [gstc, initializeGSTC]);
 
   function updateFirstRow() {
     state.update(`config.list.rows.${GSTC.api.GSTCID("0")}`, (row) => {
@@ -120,13 +130,23 @@ function App() {
     state.update("config.chart.time.zoom", 21);
   }
 
+  useEffect(() => {
+    if (gstc && state) {
+      state.update(`config.list.rows.${GSTC.api.GSTCID("0")}`, (row) => {
+        row.label = `Count: ${count}`;
+        return row;
+      });
+    }
+  }, [gstc, state, count]);
+
   return (
     <div className="App">
       <div className="toolbox">
         <button onClick={updateFirstRow}>Update first row</button>
         <button onClick={changeZoomLevel}>Change zoom level</button>
+        <button onClick={() => setCount(count + 1)}>Update state {count}</button>
       </div>
-      <div className="gstc-wrapper" ref={callback}></div>
+      <div className="gstc-wrapper" ref={gstcEl}></div>
     </div>
   );
 }
