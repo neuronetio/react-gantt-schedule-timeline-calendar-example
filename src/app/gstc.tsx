@@ -1,28 +1,26 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+"use client";
 
-import GSTC from "gantt-schedule-timeline-calendar/dist/gstc.wasm.esm.min.js";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+import GSTC, {Config, GSTCResult,IDeepState, Items, Row, Rows} from "gantt-schedule-timeline-calendar";
 import { Plugin as TimelinePointer } from "gantt-schedule-timeline-calendar/dist/plugins/timeline-pointer.esm.min.js";
 import { Plugin as Selection } from "gantt-schedule-timeline-calendar/dist/plugins/selection.esm.min.js";
 import { Plugin as ItemResizing } from "gantt-schedule-timeline-calendar/dist/plugins/item-resizing.esm.min.js";
 import { Plugin as ItemMovement } from "gantt-schedule-timeline-calendar/dist/plugins/item-movement.esm.min.js";
 
 import "gantt-schedule-timeline-calendar/dist/style.css";
-import "./App.css";
 
-function App() {
-  const gstcEl = useRef(null);
+export default function GSTCComponent() {
+  const gstcEl = useRef<HTMLDivElement>(null);
 
-  const [gstc, setGstc] = useState(null);
-  const [state, setState] = useState(null);
+  const [gstc, setGstc] = useState<GSTCResult | null>(null);
+  const [state, setState] = useState<IDeepState | null>(null);
   const [count, setCount] = useState(0);
 
   // helper functions
 
-  const generateRows = useCallback(() => {
-    /**
-     * @type { import("gantt-schedule-timeline-calendar").Rows }
-     */
-    const rows = {};
+  const generateRows = (() => {
+    const rows: Rows = {};
     for (let i = 0; i < 100; i++) {
       const id = GSTC.api.GSTCID(i.toString());
       rows[id] = {
@@ -31,14 +29,10 @@ function App() {
       };
     }
     return rows;
-  }, []);
+  });
 
-  const generateItems = useCallback(() => {
-    /**
-     * @type { import("gantt-schedule-timeline-calendar").Items }
-     */
-    const items = {};
-    // @ts-ignore
+  const generateItems = () => {
+      const items: Items = {};
     let start = GSTC.api.date().startOf("day").subtract(6, "day");
     for (let i = 0; i < 100; i++) {
       const id = GSTC.api.GSTCID(i.toString());
@@ -55,17 +49,15 @@ function App() {
       };
     }
     return items;
-  }, []);
+  };
 
   const initializeGSTC = useCallback(
-    (element) => {
-      if (gstc) {
-        return;
-      }
-      /**
-       * @type { import("gantt-schedule-timeline-calendar").Config }
-       */
-      const config = {
+    (wrapper: HTMLElement) => {
+      const element = document.createElement("div");
+      wrapper.appendChild(element);
+
+
+      const config: Config = {
         licenseKey:
           "====BEGIN LICENSE KEY====\nXOfH/lnVASM6et4Co473t9jPIvhmQ/l0X3Ewog30VudX6GVkOB0n3oDx42NtADJ8HjYrhfXKSNu5EMRb5KzCLvMt/pu7xugjbvpyI1glE7Ha6E5VZwRpb4AC8T1KBF67FKAgaI7YFeOtPFROSCKrW5la38jbE5fo+q2N6wAfEti8la2ie6/7U2V+SdJPqkm/mLY/JBHdvDHoUduwe4zgqBUYLTNUgX6aKdlhpZPuHfj2SMeB/tcTJfH48rN1mgGkNkAT9ovROwI7ReLrdlHrHmJ1UwZZnAfxAC3ftIjgTEHsd/f+JrjW6t+kL6Ef1tT1eQ2DPFLJlhluTD91AsZMUg==||U2FsdGVkX1/SWWqU9YmxtM0T6Nm5mClKwqTaoF9wgZd9rNw2xs4hnY8Ilv8DZtFyNt92xym3eB6WA605N5llLm0D68EQtU9ci1rTEDopZ1ODzcqtTVSoFEloNPFSfW6LTIC9+2LSVBeeHXoLEQiLYHWihHu10Xll3KsH9iBObDACDm1PT7IV4uWvNpNeuKJc\npY3C5SG+3sHRX1aeMnHlKLhaIsOdw2IexjvMqocVpfRpX4wnsabNA0VJ3k95zUPS3vTtSegeDhwbl6j+/FZcGk9i+gAy6LuetlKuARjPYn2LH5Be3Ah+ggSBPlxf3JW9rtWNdUoFByHTcFlhzlU9HnpnBUrgcVMhCQ7SAjN9h2NMGmCr10Rn4OE0WtelNqYVig7KmENaPvFT+k2I0cYZ4KWwxxsQNKbjEAxJxrzK4HkaczCvyQbzj4Ppxx/0q+Cns44OeyWcwYD/vSaJm4Kptwpr+L4y5BoSO/WeqhSUQQ85nvOhtE0pSH/ZXYo3pqjPdQRfNm6NFeBl2lwTmZUEuw==\n====END LICENSE KEY====",
         plugins: [TimelinePointer(), Selection(), ItemResizing(), ItemMovement()],
@@ -98,41 +90,62 @@ function App() {
       };
 
       const _state = GSTC.api.stateFromConfig(config);
+
+      // @ts-expect-error - for debugging purposes, expose state globally
+      globalThis._state = _state;
+
       const _gstc = GSTC({
-        element,
+        element ,
         state: _state,
       });
+
+      // @ts-expect-error - for debugging purposes, expose GSTC instance globally
+      globalThis._gstc = _gstc;
+
       setState(_state);
       setGstc(_gstc);
-    },
-    [generateItems, generateRows, gstc]
-  );
+
+      return _gstc;
+    },[]);
+
 
   useEffect(() => {
-    if (gstcEl.current && !gstc) {
-      initializeGSTC(gstcEl.current);
+    if(!gstcEl.current) {
+      return;
     }
+    const el = gstcEl.current?.firstChild;
+    const _gstc = initializeGSTC(gstcEl.current);
+
     return () => {
-      if (gstc) {
-        gstc.destroy();
-      }
+      _gstc.destroy();
+      el?.remove();
     };
-  }, [gstc, initializeGSTC]);
+  }, [initializeGSTC]);
+
+
+
+
 
   function updateFirstRow() {
-    state.update(`config.list.rows.${GSTC.api.GSTCID("0")}`, (row) => {
+    if(!state) {
+      return;
+    }
+    state.update(`config.list.rows.${GSTC.api.GSTCID("0")}`, (row: Row) => {
       row.label = "Changed dynamically";
       return row;
     });
   }
 
   function changeZoomLevel() {
+    if(!state) {
+      return;
+    }
     state.update("config.chart.time.zoom", 21);
   }
 
   useEffect(() => {
     if (gstc && state) {
-      state.update(`config.list.rows.${GSTC.api.GSTCID("0")}`, (row) => {
+      state.update(`config.list.rows.${GSTC.api.GSTCID("0")}`, (row: Row) => {
         row.label = `Count: ${count}`;
         return row;
       });
@@ -151,4 +164,3 @@ function App() {
   );
 }
 
-export default App;
