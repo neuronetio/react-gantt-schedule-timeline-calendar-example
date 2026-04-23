@@ -52,10 +52,7 @@ export default function GSTCComponent() {
   };
 
   const initializeGSTC = useCallback(
-    (wrapper: HTMLElement) => {
-      const element = document.createElement("div");
-      wrapper.appendChild(element);
-
+    (element: HTMLElement) => {
 
       const config: Config = {
         licenseKey:
@@ -92,7 +89,7 @@ export default function GSTCComponent() {
       const _state = GSTC.api.stateFromConfig(config);
 
       // @ts-expect-error - for debugging purposes, expose state globally
-      globalThis._state = _state;
+      globalThis.$state = _state;
 
       const _gstc = GSTC({
         element ,
@@ -100,7 +97,7 @@ export default function GSTCComponent() {
       });
 
       // @ts-expect-error - for debugging purposes, expose GSTC instance globally
-      globalThis._gstc = _gstc;
+      globalThis.$gstc = _gstc;
 
       setState(_state);
       setGstc(_gstc);
@@ -113,12 +110,17 @@ export default function GSTCComponent() {
     if(!gstcEl.current) {
       return;
     }
-    const el = gstcEl.current?.firstChild;
-    const _gstc = initializeGSTC(gstcEl.current);
+
+    const element = document.createElement("div");
+    element.className = "gstc-instance";
+    gstcEl.current.appendChild(element);
+
+    //const element = gstcEl.current;
+    const _gstc = initializeGSTC(element);
 
     return () => {
       _gstc.destroy();
-      el?.remove();
+      element.remove();
     };
   }, [initializeGSTC]);
 
