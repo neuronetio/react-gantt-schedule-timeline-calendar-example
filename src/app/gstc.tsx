@@ -115,7 +115,6 @@ export default function GSTCComponent() {
     element.className = "gstc-instance";
     gstcEl.current.appendChild(element);
 
-    //const element = gstcEl.current;
     const _gstc = initializeGSTC(element);
 
     return () => {
@@ -129,30 +128,22 @@ export default function GSTCComponent() {
 
 
   function updateFirstRow() {
-    if(!state) {
-      return;
-    }
-    state.update(`config.list.rows.${GSTC.api.GSTCID("0")}`, (row: Row) => {
+    state?.update(`config.list.rows.${GSTC.api.GSTCID("0")}`, (row: Row) => {
       row.label = "Changed dynamically";
       return row;
     });
   }
 
   function changeZoomLevel() {
-    if(!state) {
-      return;
-    }
-    state.update("config.chart.time.zoom", 21);
+    state?.update("config.chart.time.zoom", 21);
   }
 
   useEffect(() => {
-    if (gstc && state) {
-      state.update(`config.list.rows.${GSTC.api.GSTCID("0")}`, (row: Row) => {
-        row.label = `Count: ${count}`;
-        return row;
-      });
-    }
-  }, [gstc, state, count]);
+    state?.update(`config.list.rows.${GSTC.api.GSTCID("0")}`, (row: Row) => {
+      row.label = `Count: ${count}`;
+      return row;
+    });
+  }, [state, count]);
 
   return (
     <div className="App">
